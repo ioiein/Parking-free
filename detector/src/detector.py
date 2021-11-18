@@ -4,6 +4,7 @@ import yaml
 import click
 import torch
 import json
+import cv2
 
 
 LOGGER_CFG = "configs/logging.conf.yaml"
@@ -12,6 +13,7 @@ MODEL_PATH = "model/last.pt"
 CONF_LEVEL = 0.4
 IMG_PATH = "data/input/img.jpg"
 JSON_PATH = "data/output/out.json"
+OUTPUT_IMG = "../server/img/out.jpg"
 
 logger = logging.getLogger(APPLICATION_NAME)
 global model, results
@@ -20,6 +22,14 @@ global model, results
 def setup_logging(path: str) -> None:
     with open(path) as config_f:
         logging.config.dictConfig(yaml.safe_load(config_f))
+
+
+def draw_bbox(marks, image_path=IMG_PATH, output_img=OUTPUT_IMG):
+    imgcv = cv2.imread(image_path)
+    for tensor in marks:
+        [x1, y1, x2, y2, _, _] = tensor.tolist()
+        cv2.rectangle(imgcv, (round(x1), round(y1)), (round(x2), round(y2)), (0, 0, 255), 1)
+    cv2.imwrite(output_img, imgcv)
 
 
 @click.command(name="detect")
@@ -40,6 +50,7 @@ def detect_command():
     except Exception as err:
         logger.error(f"{err} happened")
         exit(-2)
+    draw_bbox(results.xyxy[0])
     with open(JSON_PATH, 'w') as fi:
         json.dump(results.pandas().xywhn[0].to_json(), fi)
     logger.info(f"json saved\n")
