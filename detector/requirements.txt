@@ -1,0 +1,4 @@
+PyYAML==6.0
+click==8.0.3
+torch==1.10.0
+setuptools==57.0.0

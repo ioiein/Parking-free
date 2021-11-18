@@ -1,0 +1,16 @@
+version: 1
+formatters:
+  simple:
+    class: logging.Formatter
+    format: "%(asctime)s %(levelname)s: %(message)s"
+    datefmt: "%Y.%m.%d %H:%M:%S"
+handlers:
+  file_handler:
+    class: logging.FileHandler
+    filename: detector.log
+    level: DEBUG
+    formatter: simple
+loggers:
+  detector:
+    level: DEBUG
+    handlers: [file_handler]
