@@ -36,7 +36,7 @@ def draw_bbox(marks, image_path=IMG_PATH, output_img=OUTPUT_IMG):
 @click.command(name="detect")
 def detect_command():
     os.system(
-        f"ffmpeg -i https://msk.rtsp.me/XEmxGcyEbsWZaHxQlTe5-w/1635357896/hls/ZdG5F8D5.m3u8 -frames:v 1 {IMG_PATH}.jpg")
+        f"ffmpeg -y -i https://msk.rtsp.me/XEmxGcyEbsWZaHxQlTe5-w/1635357896/hls/ZdG5F8D5.m3u8 -frames:v 1 {IMG_PATH}.jpg")
     setup_logging(LOGGER_CFG)
     logger.info(f"script started")
     try:
