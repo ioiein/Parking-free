@@ -6,6 +6,7 @@ import torch
 import json
 import cv2
 import os
+import time
 
 
 LOGGER_CFG = "configs/logging.conf.yaml"
@@ -37,28 +38,32 @@ def draw_bbox(marks, image_path=IMG_PATH, output_img=OUTPUT_IMG):
 
 @click.command(name="detect")
 def detect_command():
-    os.system(
-        f"ffmpeg -y -i https://msk.rtsp.me/XEmxGcyEbsWZaHxQlTe5-w/1635357896/hls/ZdG5F8D5.m3u8 -frames:v 1 {IMG_PATH}.jpg")
     setup_logging(LOGGER_CFG)
     logger.info(f"script started")
     try:
-        model = torch.hub.load('ultralytics/yolov5', 'custom', path=MODEL_PATH)
+        model = torch.hub.load('ultralytics/yolov5', 'custom', path=MODEL_PATH, force_reload=True)
         logger.info(f"model loaded")
     except Exception as err:
         logger.error(f"model didnt load, {err} happened")
         exit(-1)
     model.conf = CONF_LEVEL
     logger.info(f"confidence threshold set")
-    try:
-        results = model(IMG_PATH)
-        logger.info(f"detection done")
-    except Exception as err:
-        logger.error(f"{err} happened")
-        exit(-2)
-    draw_bbox(results.xyxy[0])
-    with open(JSON_PATH, 'w') as fi:
-        json.dump(results.pandas().xywhn[0].to_json(), fi)
-    logger.info(f"json saved\n")
+    while True:
+        logger.info(f"iteration started")
+        os.system(
+            f"ffmpeg -y -i https://msk.rtsp.me/XEmxGcyEbsWZaHxQlTe5-w/1635357896/hls/ZdG5F8D5.m3u8 -frames:v 1 {IMG_PATH}.jpg"
+        )
+        try:
+            results = model(IMG_PATH)
+            logger.info(f"detection done")
+        except Exception as err:
+            logger.error(f"{err} happened")
+        draw_bbox(results.xyxy[0])
+        with open(JSON_PATH, 'w') as fi:
+            json.dump(results.pandas().xywhn[0].to_json(), fi)
+        logger.info(f"json saved")
+        logger.info(f"iteration ended\n")
+        time.sleep(60)
 
 
 if __name__ == "__main__":
