@@ -15,6 +15,7 @@ CONF_LEVEL = 0.4
 IMG_PATH = "data/input/img.jpg"
 JSON_PATH = "data/output/out.json"
 OUTPUT_IMG = "../server/img/out.jpg"
+OUTPUT_TG_IMG = "../telegram_bot/out.jpg"
 
 logger = logging.getLogger(APPLICATION_NAME)
 global model, results
@@ -31,6 +32,7 @@ def draw_bbox(marks, image_path=IMG_PATH, output_img=OUTPUT_IMG):
         [x1, y1, x2, y2, _, _] = tensor.tolist()
         cv2.rectangle(imgcv, (round(x1), round(y1)), (round(x2), round(y2)), (0, 0, 255), 1)
     cv2.imwrite(output_img, imgcv)
+    cv2.imwrite(OUTPUT_TG_IMG, imgcv)
 
 
 @click.command(name="detect")
