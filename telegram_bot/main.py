@@ -2,8 +2,6 @@ from telegram import Update, InputMediaPhoto, KeyboardButton, ReplyKeyboardMarku
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 
 
-
-
 def start(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /start is issued."""
     user = update.effective_user
