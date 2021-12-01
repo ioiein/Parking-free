@@ -51,7 +51,7 @@ def detect_command():
     while True:
         logger.info(f"iteration started")
         os.system(
-            f"ffmpeg -y -i https://msk.rtsp.me/XEmxGcyEbsWZaHxQlTe5-w/1635357896/hls/ZdG5F8D5.m3u8 -frames:v 1 {IMG_PATH}.jpg"
+            f"ffmpeg -y -i https://msk.rtsp.me/XEmxGcyEbsWZaHxQlTe5-w/1635357896/hls/ZdG5F8D5.m3u8 -frames:v 1 {IMG_PATH}"
         )
         try:
             results = model(IMG_PATH)
