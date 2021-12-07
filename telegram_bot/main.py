@@ -19,6 +19,8 @@ def messageHandler(update: Update, context: CallbackContext):
     if "Show" in update.message.text:
         context.bot.sendMediaGroup(chat_id=update.effective_chat.id,
                                    media=[InputMediaPhoto(open('out.jpg', 'rb'))])
+        context.bot.sendMediaGroup(chat_id=update.effective_chat.id,
+                                   media=[InputMediaPhoto(open('map.jpg', 'rb'))])
 
 
 def main() -> None:
