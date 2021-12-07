@@ -8,6 +8,8 @@ import cv2
 import os
 import time
 
+from src.map import create_map
+
 
 LOGGER_CFG = "configs/logging.conf.yaml"
 APPLICATION_NAME = "detector"
@@ -17,6 +19,8 @@ IMG_PATH = "data/input/img.jpg"
 JSON_PATH = "data/output/out.json"
 OUTPUT_IMG = "../server/img/out.jpg"
 OUTPUT_TG_IMG = "../telegram_bot/out.jpg"
+OUTPUT_MAP = "../server/img/map.jpg"
+OUTPUT_TG_MAP = "../telegram_bot/map.jpg"
 
 logger = logging.getLogger(APPLICATION_NAME)
 global model, results
@@ -41,7 +45,7 @@ def detect_command():
     setup_logging(LOGGER_CFG)
     logger.info(f"script started")
     try:
-        model = torch.hub.load('ultralytics/yolov5', 'custom', path=MODEL_PATH, force_reload=True)
+        model = torch.hub.load('ultralytics/yolov5', 'custom', path=MODEL_PATH)
         logger.info(f"model loaded")
     except Exception as err:
         logger.error(f"model didnt load, {err} happened")
@@ -59,6 +63,9 @@ def detect_command():
         except Exception as err:
             logger.error(f"{err} happened")
         draw_bbox(results.xyxy[0])
+        parking_map = create_map(results.xywh[0])
+        cv2.imwrite(OUTPUT_MAP, parking_map)
+        cv2.imwrite(OUTPUT_TG_MAP, parking_map)
         with open(JSON_PATH, 'w') as fi:
             json.dump(results.pandas().xywhn[0].to_json(), fi)
         logger.info(f"json saved")
