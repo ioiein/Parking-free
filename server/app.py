@@ -9,6 +9,11 @@ app = FastAPI()
 
 @app.get("/")
 async def main():
+    return FileResponse('img/map.jpg')
+
+
+@app.get("/origin")
+async def original_img():
     return FileResponse('img/out.jpg')
 
 if __name__ == "__main__":
