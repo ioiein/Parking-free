@@ -1,3 +1,4 @@
+import json
 from telegram import Update, InputMediaPhoto, KeyboardButton, ReplyKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 
@@ -21,6 +22,13 @@ def messageHandler(update: Update, context: CallbackContext):
                                    media=[InputMediaPhoto(open('out.jpg', 'rb'))])
         context.bot.sendMediaGroup(chat_id=update.effective_chat.id,
                                    media=[InputMediaPhoto(open('map.jpg', 'rb'))])
+
+        with open('slots.json', 'r') as f:
+            slots = json.load(f)
+        free_slots = 0
+        for key in slots.keys():
+            free_slots += slots[key]
+        update.message.reply_text(f"Свободных мест: {free_slots}")
 
 
 def main() -> None:
