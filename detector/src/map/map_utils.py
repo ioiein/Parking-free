@@ -14,25 +14,28 @@ MAP_HEIGHT = 256
 
 # параметры сетки
 GRID_WIDTH = 10
-X_AR = 400
-D_AR = - GRID_WIDTH * 0.007
+X_AR = 500
+D_AR = - GRID_WIDTH * 0.008
 
 # контур дорожного полотна
 ROAD_POINTS = [
-    (0, 145), (280, 145), (280, 100), (490, 100), (520, 10), (900, 10), (1005, 100),  # сверху
-    (1005, 256), (900, 256),  # справа
-    (900, 245), (0, 245), (0, 145)  # снизу
+    (0, 145), (340, 145), (340, 100), (555, 100), (585, 10), (920, 10),   # сверху
+    (1015, 80), (1015, 256),  # справа
+    (940, 256), (940, 245), (0, 245), (0, 145)  # снизу
 ]
 
 # ширина машины
-CAR_WIDTH = 19
+CAR_WIDTH = 16
+
+# ручная корректировка
+CORRECTION_AREA = [[985, 120], [985, 200], [1020, 200], [1020, 120], [985, 120]]
 
 
 # матрица проективного преобразования (позволяет сменить ракурс)
 def homography_matrix(map_width: int = MAP_WIDTH, map_height: int = MAP_HEIGHT):
 
     source_points = np.asarray([
-      [  200, 235], # top left
+      [ 0, 220],  # top left
       [ 1290, 400], # top mid
       [ 1890, 640], # top right
       [ 1920, 915], # bot right
@@ -52,10 +55,9 @@ def homography_matrix(map_width: int = MAP_WIDTH, map_height: int = MAP_HEIGHT):
     return cv2.findHomography(source_points, target_points)
 
 
-
 def make_grid(
         grid_width: int = GRID_WIDTH,
-        map_width: int = MAP_WIDTH,
+        map_width: int = 1010, # MAP_WIDTH
         x_ar: int = X_AR,
         d_ar: float = D_AR,
 ):
@@ -76,9 +78,9 @@ def make_grid(
     x = x_ar
     while x > 0:
         assert grid_width_left > 0, 'please, reduce abs(d_ar) to make smaller steps'
+        grids_source_lst.append(int(x))
         grid_width_left += d_ar  # элемент а.п.
         x -= grid_width_left  # смещаюсь влево
-        grids_source_lst.append(int(x))
     grids_source_lst = grids_source_lst[::-1] # разворачиваю список
 
     # сетка арфметическая вправо
@@ -86,9 +88,11 @@ def make_grid(
     x = x_ar
     while x < map_width:
         assert grid_width_right > 0, 'please, reduce abs(d_ar) to make smaller steps'
+        grids_source_lst.append(int(x))
         grid_width_right += d_ar  # элемент а.п.
         x += grid_width_right  # смещаюсь вправо
-        grids_source_lst.append(int(x))
+
+    grids_source_lst.remove(x_ar)  # убираю стартовый х, учтенный дважды (при движении влево и при движении вправо)
 
     return grids_source_lst
 
@@ -106,12 +110,12 @@ def make_map(n_lines: int, map_width: int = MAP_WIDTH, map_height: int = MAP_HEI
     :return:
     """
     # шаблон карты
-    pk_map = np.full((map_height, map_width, 3), 255, dtype='uint8')
+    pk_map = np.full((map_height, map_width, 3), 150, dtype='uint8')
 
     # отрисовка дорожного полотнаи
     for i in range(len(road_points) - 1):
-        cv2.line(pk_map, tuple(road_points[i]), tuple(road_points[i + 1]), color=(175, 175, 175), thickness=4)
-    pk_map = cv2.fillPoly(pk_map, pts=[np.array(road_points)], color=(200, 200, 200))
+        cv2.line(pk_map, tuple(road_points[i]), tuple(road_points[i + 1]), color=(255, 255, 255), thickness=4)
+    pk_map = cv2.fillPoly(pk_map, pts=[np.array(road_points)], color=(255, 255, 255))
 
     # определяю координаты х равномерной сетки
     grid_width = map_width / (n_lines + 1)  # линии делят карту на n_lines + 1 область
@@ -151,11 +155,17 @@ def draw_car(
     :param car_width: ширина машины
     :return: карта-схема
     """
-    color = (30, 144, 255)
-    car_length = 1.8 * car_width
+    color = (150, 150, 150)
+    color = (0, 0, 255)
+    car_length = 2.3 * car_width
+
+    # TODO возможно без этой встравки?
+    # если в трансформированном фото точка попадает в указанную область, то я ее немного смещаю
+    if correction_right_bottom_parking(x, y):
+        x = 1001
 
     idx = find_nearest(grids_s_lst, x)
-    x = grids_t_lst[idx]  # смешаю на ближаюшую сетку
+    x = grids_t_lst[idx]  # смещаю на ближаюшую сетку
     if y_level is not None:
         y = y_level
 
@@ -175,17 +185,17 @@ def draw_car(
     else:
         a = car_width
 
-        Ax = int(x - a * sin(pos) - a / 2 * cos(pos))
-        Dx = int(x - a * sin(pos) + a / 2 * cos(pos))
+        Ax = int(x - car_length / 2 * sin(pos) - car_width / 2 * cos(pos))
+        Dx = int(x - car_length / 2 * sin(pos) + car_width / 2 * cos(pos))
 
-        Ay = int(y - a * cos(pos) + a / 2 * sin(pos))
-        Dy = int(y - a * cos(pos) - a / 2 * sin(pos))
+        Ay = int(y - car_length / 2 * cos(pos) + car_width / 2 * sin(pos))
+        Dy = int(y - car_length / 2 * cos(pos) - car_width / 2 * sin(pos))
 
-        Bx = int(x + a * sin(pos) - a / 2 * cos(pos))
-        Cx = int(x + a * sin(pos) + a / 2 * cos(pos))
+        Bx = int(x + car_length / 2 * sin(pos) - car_width / 2 * cos(pos))
+        Cx = int(x + car_length / 2 * sin(pos) + car_width / 2 * cos(pos))
 
-        By = int(y + a * cos(pos) + a / 2 * sin(pos))
-        Cy = int(y + a * cos(pos) - a / 2 * sin(pos))
+        By = int(y + car_length / 2 * cos(pos) + car_width / 2 * sin(pos))
+        Cy = int(y + car_length / 2 * cos(pos) - car_width / 2 * sin(pos))
 
         rectangle_with_slope = np.array([[Ax, Ay], [Bx, By], [Cx, Cy], [Dx, Dy]])
         cv2.fillPoly(pk_map, pts=[rectangle_with_slope], color=color)
@@ -224,7 +234,8 @@ def draw_parking(
         grids_source_lst: list,
         grids_target_lst: list,
         y_level: int,
-        pos: int
+        pos: int,
+        capacity: int = 0
 ):
     """
     Отрисовка автомобилей на карте, которые находятся в пределах области "contours"
@@ -235,12 +246,14 @@ def draw_parking(
     :param grids_target_lst: сетка карты-схемы
     :param y_level: у координата отрисовки (х - рассчитывается автоматически)
     :param pos: угол отрисовки
+    :param capacity: емкость парковки
     :return: карта-схема
     """
 
     # наношу размету
     for bbox in bbox_lst:
         if cv2.pointPolygonTest(contours[0], (bbox[0], bbox[1]), False) == 1:
+            capacity -= 1
             parking_map = draw_car(
                 pk_map=parking_map,
                 x=bbox[0],
@@ -251,4 +264,14 @@ def draw_parking(
                 grids_t_lst=grids_target_lst
             )
 
-    return parking_map
+    # ограничение на случай, если машины запаркованы плотнее стандартного состояния
+    if capacity < 0:
+        capacity = 0
+
+    return parking_map, capacity
+
+
+def correction_right_bottom_parking(x: int, y: int, area: list = CORRECTION_AREA):
+    # корректировка правой нижней области, которая возникает из-за изгиба изображения
+    contour = make_contour(area)
+    return cv2.pointPolygonTest(contour[0], (x, y), False) == 1

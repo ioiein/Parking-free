@@ -21,6 +21,8 @@ OUTPUT_IMG = "../server/img/out.jpg"
 OUTPUT_TG_IMG = "../telegram_bot/out.jpg"
 OUTPUT_MAP = "../server/img/map.jpg"
 OUTPUT_TG_MAP = "../telegram_bot/map.jpg"
+OUTPUT_FREE = "../server/img/slots.json"
+OUTPUT_TG_FREE = "../telegram_bot/slots.json"
 
 logger = logging.getLogger(APPLICATION_NAME)
 global model, results
@@ -63,9 +65,13 @@ def detect_command():
         except Exception as err:
             logger.error(f"{err} happened")
         draw_bbox(results.xyxy[0])
-        parking_map = create_map(results.xywh[0])
+        parking_map, free_slots = create_map(results.xywh[0])
         cv2.imwrite(OUTPUT_MAP, parking_map)
         cv2.imwrite(OUTPUT_TG_MAP, parking_map)
+        with open(OUTPUT_FREE, 'w') as f:
+            json.dump(free_slots, f)
+        with open(OUTPUT_TG_FREE, 'w') as f:
+            json.dump(free_slots, f)
         with open(JSON_PATH, 'w') as fi:
             json.dump(results.pandas().xywhn[0].to_json(), fi)
         logger.info(f"json saved")
