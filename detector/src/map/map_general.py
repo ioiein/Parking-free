@@ -67,6 +67,6 @@ def create_map(bbox_tensor_lst):
 
     free_spaces_dct = {'top': free_top, 'right': free_right, 'bottom': free_bot, 'left': free_left, 'central': free_cen}
 
-    # parking_map = cv2.cvtColor(parking_map, cv2.COLOR_BGR2RGB) # если нужно поменять каналы
+    parking_map = cv2.cvtColor(parking_map, cv2.COLOR_BGR2RGB) # если нужно поменять каналы
 
     return parking_map, free_spaces_dct
