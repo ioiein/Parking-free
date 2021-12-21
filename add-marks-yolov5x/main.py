@@ -1,7 +1,3 @@
-# This is a sample Python script.
-
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 import os
 import torch
 
@@ -37,7 +33,10 @@ def get_iou(bb1, bb2):
 
 
 def add_marks():
+    # load model
     model = torch.hub.load('ultralytics/yolov5', 'yolov5x')
+
+    # cycle for all images in PKLot
     for cam in os.scandir('images'):
         for weather in os.scandir(cam):
             for file in os.listdir(weather):
@@ -45,18 +44,23 @@ def add_marks():
                 detections.clear()
                 marks = []
                 marks.clear()
+                # make prediction by model
                 result = model(os.path.join(weather, file))
                 result_tensor = result.xywhn[0]
                 for tensor in result_tensor:
                     [x, y, w, h, _, cl] = tensor.tolist()
+                    # 2 - car, 7 - truck
                     if cl == 2 or cl == 7:
                         detections.append([0, x, y, w, h])
+
+                # read bbox from marks of PKLot
                 with open(os.path.join('labels', cam.name, weather.name, file.replace('.jpg', '.txt')), 'r') as fo:
                     for line in fo:
                         marks.append(line.split())
 
                 added_marks = []
                 added_marks.clear()
+                # compare bbox in detections from model with marks from PKLot
                 for det in detections:
                     no_intersection = True
                     det_str = [str(i) for i in det]
@@ -64,6 +68,7 @@ def add_marks():
                         iou = get_iou(det, mark)
                         if iou > 0:
                             no_intersection = False
+                        # bbox from model better > so replace
                         if iou > 0.35:
                             added_marks.append(det_str)
                             marks.remove(mark)
