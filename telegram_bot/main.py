@@ -3,9 +3,13 @@ from telegram import Update, InputMediaPhoto, KeyboardButton, ReplyKeyboardMarku
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 
 
+TOKEN = '2112222061:AAEU4dQirnGstVTE8jvz9MiUizAZVju3l84'
+
+
 def start(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /start is issued."""
     user = update.effective_user
+    # create keyboard
     buttons = [[KeyboardButton("Show")]]
     update.message.reply_markdown_v2(
         fr'Hi {user.mention_markdown_v2()}\!',
@@ -17,24 +21,30 @@ def messageHandler(update: Update, context: CallbackContext):
     #if update.effective_chat.username not in allowedUsernames:
     #    context.bot.send_message(chat_id=update.effective_chat.id, text="You are not allowed to use this bot")
     #    return
+
+    # if button pressed
     if "Show" in update.message.text:
+        # send img with bboxes
         context.bot.sendMediaGroup(chat_id=update.effective_chat.id,
                                    media=[InputMediaPhoto(open('out.jpg', 'rb'))])
+        # send map
         context.bot.sendMediaGroup(chat_id=update.effective_chat.id,
                                    media=[InputMediaPhoto(open('map.jpg', 'rb'))])
 
+        # read slots
         with open('slots.json', 'r') as f:
             slots = json.load(f)
         free_slots = 0
         for key in slots.keys():
             free_slots += slots[key]
+        # send count of slots
         update.message.reply_text(f"Свободных мест: {free_slots}")
 
 
 def main() -> None:
     """Start the bot."""
     # Create the Updater and pass it your bot's token.
-    updater = Updater('2112222061:AAEU4dQirnGstVTE8jvz9MiUizAZVju3l84')
+    updater = Updater(TOKEN)
 
     # Get the dispatcher to register handlers
     dispatcher = updater.dispatcher
