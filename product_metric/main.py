@@ -5,28 +5,38 @@ import torch
 from map_general import create_map
 
 MODEL_PATH = 'model/best.pt'
+CONF = 0.4
 WIDTH = 1920
 HEIGHT = 1080
 
 
 def main():
+    # load model
     model = torch.hub.load('ultralytics/yolov5', 'custom', path=MODEL_PATH)
-    model.conf = 0.4
+    model.conf = CONF
+
     top_errors = []
     right_errors = []
     bottom_errors = []
     left_errors = []
     central_errors = []
     total_errors = []
+
+    # cycle for all images
     for img in os.listdir('images'):
+        # make prediction
         result = model(os.path.join('images', img))
         marks = []
         _, predict_space = create_map(result.xywh[0])
+
+        # read marks from file for this image
         with open(os.path.join('labels', img.replace('.jpg', '.txt')), 'r') as fo:
             for line in fo:
                 _, x, y, _, _ = line.split()
                 marks.append(torch.tensor([float(x) * WIDTH, float(y) * HEIGHT]))
         _, true_space = create_map(marks)
+
+        # append errors for each slot
         top_errors.append(predict_space['top'] - true_space['top'])
         right_errors.append(predict_space['right'] - true_space['right'])
         bottom_errors.append(predict_space['bottom'] - true_space['bottom'])
@@ -37,13 +47,6 @@ def main():
                             predict_space['bottom'] - true_space['bottom'] +
                             predict_space['left'] - true_space['left'] +
                             predict_space['central'] - true_space['central'])
-
-    print('top mse: ', np.square(top_errors).mean())
-    print('right mse: ', np.square(right_errors).mean())
-    print('bottom mse: ', np.square(bottom_errors).mean())
-    print('left mse: ', np.square(left_errors).mean())
-    print('central mse: ', np.square(central_errors).mean())
-    print('total mse: ', np.square(total_errors).mean())
 
     print('top mae: ', np.abs(top_errors).mean())
     print('right mae: ', np.abs(right_errors).mean())
