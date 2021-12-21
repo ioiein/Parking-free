@@ -9,6 +9,7 @@ import os
 import time
 
 from src.map import create_map
+from src.utils import draw_bbox
 
 
 LOGGER_CFG = "configs/logging.conf.yaml"
@@ -31,15 +32,6 @@ global model, results
 def setup_logging(path: str) -> None:
     with open(path) as config_f:
         logging.config.dictConfig(yaml.safe_load(config_f))
-
-
-def draw_bbox(marks, image_path=IMG_PATH, output_img=OUTPUT_IMG, output_tg_img=OUTPUT_TG_IMG):
-    imgcv = cv2.imread(image_path)
-    for tensor in marks:
-        [x1, y1, x2, y2, _, _] = tensor.tolist()
-        cv2.rectangle(imgcv, (round(x1), round(y1)), (round(x2), round(y2)), (0, 0, 255), 1)
-    cv2.imwrite(output_img, imgcv)
-    cv2.imwrite(output_tg_img, imgcv)
 
 
 @click.command(name="detect")
@@ -73,7 +65,7 @@ def detect_command():
             logger.error(f"{err} happened")
 
         # drow box, make map and save slots dict
-        draw_bbox(results.xyxy[0])
+        draw_bbox(results.xyxy[0], IMG_PATH, OUTPUT_IMG, OUTPUT_TG_IMG)
         parking_map, free_slots = create_map(results.xywh[0])
         cv2.imwrite(OUTPUT_MAP, parking_map)
         cv2.imwrite(OUTPUT_TG_MAP, parking_map)
